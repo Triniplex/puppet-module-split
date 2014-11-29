@@ -18,6 +18,13 @@
 #    License for the specific language governing permissions and limitations   #
 #    under the License.                                                        #
 #                                                                              #
+#         USAGE:  ./module_split.sh -cr create_repos -o oauth_key              #
+#                 -u github_user -c config_repo_url -m merge_repo_url          #
+#                 -s sync_repos_only -h help                                   #
+#                                                                              #
+#   DESCRIPTION:  Puppet Module Split Script                                   #
+#   Todo: add other options in                                                 #
+#                                                                              #
 # ############################################################################ #
 
 # Set globals
@@ -41,11 +48,11 @@ read_s_args() {
 }
 
 print_help() {
-    echo -n "Usage: `basename $0` options (-o oauth_key) (-s) "
-    echo "sync_repos_only (-h) help"
+    echo -n "Usage: `basename $0` options (-cr) create_repos "
+    echo -n "(-o oauth_key) (-u github_user) (-c config_repo_url) "
+    echo -n "(-m merge_repo_url) (-s) sync_repos_only (-h) help"
     exit 
 }
-
 
 # Get command line options
 parse_command_line() {
@@ -70,6 +77,7 @@ parse_command_line() {
     done
 }
 
+# Synchronize the repositories
 sync_repos() {
     echo "${BASE}/${CONFIG_REPO_SUFFIX}"
     cd "${BASE}/${CONFIG_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
@@ -99,6 +107,7 @@ sync_repos() {
     done
 }
 
+# Set up the merge repository
 merge_repo_setup() {
     cd "${BASE}"
     if [ ! -d "${MERGE_REPO_SUFFIX}" ]; then
@@ -117,6 +126,7 @@ merge_repo_setup() {
     fi
 }
 
+# Set up the config repository
 config_repo_setup() {
     cd "${BASE}"
     if [ ! -d "${CONFIG_REPO_SUFFIX}" ]; then
@@ -159,8 +169,7 @@ create_repos() {
     sync_repos
 }
 
-
-# Create the github repos
+# Helper function to loop through repositories
 create_github_repos() {
     echo "cd ${BASE}/${MERGE_REPO_SUFFIX}"
     cd "${BASE}/${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
@@ -171,6 +180,7 @@ create_github_repos() {
     done
 }
 
+# Create the github repositories
 create_github_repo() {
     DEST_REPO=$1
     RECREATE_REPO=0
@@ -200,6 +210,7 @@ create_github_repo() {
     fi
 }
 
+# Helper function to create the repositories necessary for the split
 create_setup_repos() {
     cd "${BASE}"
     if [ ! -d "${BASE}/${CONFIG_REPO_SUFFIX}/" ]; then
