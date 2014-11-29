@@ -23,13 +23,12 @@
 # Set globals
 GITHUB_USER="Triniplex"
 GITHUB_URL=git@github.com:${GITHUB_USER}
-# CONFIG_REPO="https://github.com/openstack-infra/system-config.git"
+#CONFIG_REPO="https://github.com/openstack-infra/system-config.git"
 CONFIG_REPO="https://github.com/Triniplex/system-config.git"
 CONFIG_REPO_SUFFIX=$(echo ${CONFIG_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
 MERGE_REPO="${GITHUB_URL}/puppet-modules.git"
 MERGE_REPO_SUFFIX=$(echo ${MERGE_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
 BASE="$(pwd)"
-OAUTH_KEY=""
 
 declare -a sargs=()
 
@@ -67,26 +66,26 @@ parse_command_line() {
                 print_help
                 ;;
         esac
-    shift
+        shift
     done
 }
 
 sync_repos() {
-   echo "${BASE}/${CONFIG_REPO_SUFFIX}"
-   cd "${BASE}/${CONFIG_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
-   echo git checkout master"
-   git checkout master 2>/dev/null 1>/dev/null
-   echo "git fetch origin"
-   git fetch origin 2>/dev/null 1>/dev/null
-   echo "git subtree split --prefix=modules/ --rejoin --branch modules_branch"
-   git subtree split --prefix=modules/ --rejoin --branch modules_branch 2>/dev/null 1>/dev/null
-   echo "cd ${BASE}/${MERGE_REPO_SUFFIX}"
-   cd "${BASE}/${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
-   echo "git pull ${BASE}/${CONFIG_REPO_SUFFIX} modules_branch"
-   git pull "${BASE}/${CONFIG_REPO_SUFFIX}" modules_branch 2>/dev/null 1>/dev/null
-   echo "git push origin -u master"
-   git push origin -u master 2>/dev/null 1>/dev/null
-   for MODULE in $(ls "${BASE}/${CONFIG_REPO_SUFFIX}/modules"); do
+    echo "${BASE}/${CONFIG_REPO_SUFFIX}"
+    cd "${BASE}/${CONFIG_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
+    echo "git checkout master"
+    git checkout master 2>/dev/null 1>/dev/null
+    echo "git fetch origin"
+    git fetch origin 2>/dev/null 1>/dev/null
+    echo "git subtree split --prefix=modules/ --rejoin --branch modules_branch"
+    git subtree split --prefix=modules/ --rejoin --branch modules_branch 2>/dev/null 1>/dev/null
+    echo "cd ${BASE}/${MERGE_REPO_SUFFIX}"
+    cd "${BASE}/${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
+    echo "git pull ${BASE}/${CONFIG_REPO_SUFFIX} modules_branch"
+    git pull "${BASE}/${CONFIG_REPO_SUFFIX}" modules_branch 2>/dev/null 1>/dev/null
+    echo "git push origin -u master"
+    git push origin -u master 2>/dev/null 1>/dev/null
+    for MODULE in $(ls "${BASE}/${CONFIG_REPO_SUFFIX}/modules"); do
         echo "cd ${BASE}/${MERGE_REPO_SUFFIX}"
         cd "${BASE}/${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
         echo "git subtree split --prefix=${MODULE}/ --rejoin --branch module_${MODULE}_branch"
@@ -97,52 +96,52 @@ sync_repos() {
         git pull "${BASE}/${MERGE_REPO_SUFFIX}/" module_${MODULE}_branch 2>/dev/null 1>/dev/null
         echo "git push origin -u master"
         git push origin -u master 2>/dev/null 1>/dev/null
-   done
+    done
 }
 
-# Create the local repositories
 merge_repo_setup() {
-            cd "${BASE}"
-            if [ ! -d "${MERGE_REPO_SUFFIX}" ]; then
-                echo "mkdir ${MERGE_REPO_SUFFIX}"
-                mkdir "${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
-                echo "cd ${MERGE_REPO_SUFFIX}"
-                cd "${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
-                echo "git init"
-                git init 2>/dev/null 1>/dev/null
-                echo "git pull ${BASE}/${CONFIG_REPO_SUFFIX} modules_branch"
-                git pull "${BASE}/${CONFIG_REPO_SUFFIX}" modules_branch 2>/dev/null 1>/dev/null
-                echo "git remote add origin git@github.com:Triniplex/puppet-modules.git"
-                git remote add origin git@github.com:Triniplex/puppet-modules.git 2>/dev/null 1>/dev/null
-                echo "git push origin -u master"
-                git push origin -u master  2>/dev/null 1>/dev/null
-             fi
+    cd "${BASE}"
+    if [ ! -d "${MERGE_REPO_SUFFIX}" ]; then
+        echo "mkdir ${MERGE_REPO_SUFFIX}"
+        mkdir "${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
+        echo "cd ${MERGE_REPO_SUFFIX}"
+        cd "${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
+        echo "git init"
+        git init 2>/dev/null 1>/dev/null
+        echo "git pull ${BASE}/${CONFIG_REPO_SUFFIX} modules_branch"
+        git pull "${BASE}/${CONFIG_REPO_SUFFIX}" modules_branch 2>/dev/null 1>/dev/null
+        echo "git remote add origin git@github.com:Triniplex/puppet-modules.git"
+        git remote add origin git@github.com:Triniplex/puppet-modules.git 2>/dev/null 1>/dev/null
+        echo "git push origin -u master"
+        git push origin -u master  2>/dev/null 1>/dev/null
+    fi
 }
 
 config_repo_setup() {
-            cd "${BASE}"
-            if [ ! -d "${CONFIG_REPO_SUFFIX}" ]; then
-                echo "git clone ${CONFIG_REPO}"
-                git clone "${CONFIG_REPO}" 2>/dev/null 1>/dev/null
-                echo "cd ${CONFIG_REPO_SUFFIX}"
-                cd "${CONFIG_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
-                echo "git subtree split --prefix=modules/ --rejoin --branch modules_branch"
-                git subtree split --prefix=modules/ --rejoin --branch modules_branch 2>/dev/null 1>/dev/null
-            fi
+    cd "${BASE}"
+    if [ ! -d "${CONFIG_REPO_SUFFIX}" ]; then
+        echo "git clone ${CONFIG_REPO}"
+        git clone "${CONFIG_REPO}" 2>/dev/null 1>/dev/null
+        echo "cd ${CONFIG_REPO_SUFFIX}"
+        cd "${CONFIG_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
+        echo "git subtree split --prefix=modules/ --rejoin --branch modules_branch"
+        git subtree split --prefix=modules/ --rejoin --branch modules_branch 2>/dev/null 1>/dev/null
+    fi
 }
 
 
+# Create the local repositories
 create_repos() {
     merge_repo_setup
-    echo "cd ${BASE}"
-    cd "${BASE}"
+    echo "cd ${BASE}/"
+    cd "${BASE}/"
     for MODULE in $(ls "${BASE}/${CONFIG_REPO_SUFFIX}/modules"); do
         DEST_REPO="puppet-${MODULE}"
         echo "cd ${BASE}/${MERGE_REPO_SUFFIX}" 
         cd "${BASE}/${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null 
         echo "git subtree split --prefix=${MODULE}/ --rejoin --branch module_${MODULE}_branch"
         git subtree split --prefix=${MODULE}/ --rejoin --branch module_${MODULE}_branch 2>/dev/null 1>/dev/null
-        echo "cd ${BASE}"
+        echo "cd ${BASE}/"
         cd "${BASE}/" 2>/dev/null 1>/dev/null
         echo "mkdir ${DEST_REPO}"
         mkdir "${DEST_REPO}" 2>/dev/null 1>/dev/null
@@ -152,6 +151,8 @@ create_repos() {
         git init 2>/dev/null 1>/dev/null
         echo "git remote add origin ${GITHUB_URL}/${DEST_REPO}.git"
         git remote add origin "${GITHUB_URL}/${DEST_REPO}.git" 2>/dev/null 1>/dev/null
+        echo "git pull ${BASE}/${MERGE_REPO_SUFFIX} module_${MODULE}_branch"
+        git pull "${BASE}/${MERGE_REPO_SUFFIX}" module_${MODULE}_branch 2>/dev/null 1>/dev/null
         echo "git push origin -u master"
         git push origin -u master 2>/dev/null 1>/dev/null
     done
@@ -191,7 +192,7 @@ create_github_repo() {
         echo "Creating repository ${DEST_REPO} ..."
         RESPONSE=""
         RESPONSE=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"name\":\"${DEST_REPO}\"" \
-                   -H "Authorization: token ${OAUTH_KEY}" https://api.github.com/orgs/${GITHUB_USER}/repos)
+                        -H "Authorization: token ${OAUTH_KEY}" https://api.github.com/orgs/${GITHUB_USER}/repos)
         echo $RESPONSE | grep "id" 2>/dev/null 1>/dev/null
         if [ $? -eq 0 ]; then
             echo "Repository ${DEST_REPO} successfully created!"
@@ -210,7 +211,7 @@ create_setup_repos() {
 main() {
     if [ -n "${OAUTH_KEY+1}" ]; then
         create_setup_repos
-        create_github_repos
+        create_github_repos 
     fi
     if [ -n "${SYNC_REPOS+1}" ]; then
         sync_repos
