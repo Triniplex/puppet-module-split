@@ -23,12 +23,13 @@
 # Set globals
 GITHUB_USER="Triniplex"
 GITHUB_URL=git@github.com:${GITHUB_USER}
-#CONFIG_REPO="https://github.com/openstack-infra/system-config.git"
+# CONFIG_REPO="https://github.com/openstack-infra/system-config.git"
 CONFIG_REPO="https://github.com/Triniplex/system-config.git"
 CONFIG_REPO_SUFFIX=$(echo ${CONFIG_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
 MERGE_REPO="${GITHUB_URL}/puppet-modules.git"
 MERGE_REPO_SUFFIX=$(echo ${MERGE_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
 BASE="$(pwd)"
+OAUTH_KEY=""
 
 declare -a sargs=()
 
@@ -100,47 +101,6 @@ sync_repos() {
 }
 
 # Create the local repositories
-create_repos_old() {
-    cd "${BASE}/${CONFIG_REPO_SUFFIX}"
-    for MODULE in $(ls "${BASE}/${CONFIG_REPO_SUFFIX}/modules"); do
-        DEST_REPO="puppet-${MODULE}"
-        cd "${BASE}"
-        if [ ! -d "${DEST_REPO}" ]; then
-            echo "mkdir ${DEST_REPO}"
-            mkdir "${DEST_REPO}" 2>/dev/null 1>/dev/null
-            echo "cd ${DEST_REPO}"
-            cd "${DEST_REPO}"
-            echo "git init --bare"
-            git init --bare 2>/dev/null 1>/dev/null
-            echo "git remote add origin ${GITHUB_URL}/${DEST_REPO}.git"
-            git remote add origin "${GITHUB_URL}/${DEST_REPO}.git" 2>/dev/null 1>/dev/null
-            echo "cd ${BASE}/${CONFIG_REPO_SUFFIX}" 
-            cd "${BASE}/${CONFIG_REPO_SUFFIX}" 2>/dev/null 1>/dev/null 
-            echo "git subtree split --prefix=modules/${MODULE} --branch ${MODULE}_module"
-            git subtree split --prefix=modules/${MODULE} --branch ${MODULE}_module 2>/dev/null 1>/dev/null
-            echo "git push ${BASE}/${DEST_REPO} ${MODULE}_module:master"
-            git push "${BASE}/${DEST_REPO}" ${MODULE}_module:master 2>/dev/null 1>/dev/null
-            echo "cd ${BASE}/${DEST_REPO}"
-            cd "${BASE}/${DEST_REPO}" 2>/dev/null 1>/dev/null
-            echo "git push origin master"
-            git push origin master 2>/dev/null 1>/dev/null
-            echo "cd ${BASE}/${CONFIG_REPO_SUFFIX}"
-            cd "${BASE}/${CONFIG_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
-            echo "git remote add ${MODULE}_module ${GITHUB_URL}/${DEST_REPO}"
-            git remote add ${MODULE}_module ${GITHUB_URL}/${DEST_REPO} 2>/dev/null 1>/dev/null
-            echo "git rm -r modules/${MODULE}"
-            git rm -r modules/${MODULE} 2>/dev/null 1>/dev/null
-            echo "git commit -am 'removing modules/${MODULE} folder'"
-            git commit -am 'removing modules/${MODULE} folder' 2>/dev/null 1>/dev/null
-            echo "git subtree add --prefix=modules/${MODULE} ${MODULE}_module"
-            git subtree add --prefix=modules/${MODULE} ${MODULE}_module 2>/dev/null 1>/dev/null
-            echo "git push origin master"
-            git push origin master 2>/dev/null 1>/dev/null
-        fi
-    done
-    sync_repos
-}
-
 merge_repo_setup() {
             cd "${BASE}"
             if [ ! -d "${MERGE_REPO_SUFFIX}" ]; then
@@ -174,15 +134,15 @@ config_repo_setup() {
 
 create_repos() {
     merge_repo_setup
-    echo "cd ${BASE}/"
-    cd "${BASE}/"
+    echo "cd ${BASE}"
+    cd "${BASE}"
     for MODULE in $(ls "${BASE}/${CONFIG_REPO_SUFFIX}/modules"); do
         DEST_REPO="puppet-${MODULE}"
         echo "cd ${BASE}/${MERGE_REPO_SUFFIX}" 
         cd "${BASE}/${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null 
         echo "git subtree split --prefix=${MODULE}/ --rejoin --branch module_${MODULE}_branch"
         git subtree split --prefix=${MODULE}/ --rejoin --branch module_${MODULE}_branch 2>/dev/null 1>/dev/null
-        echo "cd ${BASE}/"
+        echo "cd ${BASE}"
         cd "${BASE}/" 2>/dev/null 1>/dev/null
         echo "mkdir ${DEST_REPO}"
         mkdir "${DEST_REPO}" 2>/dev/null 1>/dev/null
@@ -195,7 +155,6 @@ create_repos() {
         echo "git push origin -u master"
         git push origin -u master 2>/dev/null 1>/dev/null
     done
-    exit
     sync_repos
 }
 
@@ -247,15 +206,11 @@ create_setup_repos() {
     fi
 }
 
-test_module_split() {
-    cd "${BASE}"
-}
-
 # Where it all starts
 main() {
     if [ -n "${OAUTH_KEY+1}" ]; then
         create_setup_repos
-        create_github_repos 
+        create_github_repos
     fi
     if [ -n "${SYNC_REPOS+1}" ]; then
         sync_repos
