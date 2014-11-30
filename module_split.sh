@@ -22,8 +22,6 @@
 
 # Set globals
 BASE="$(pwd)"
-
-declare -a sargs=()
 declare -a modules=()
 
 print_help() {
@@ -60,31 +58,43 @@ parse_command_line() {
                 ;;
         esac
     done
- if [ -n "${CREATE_REPOS+1}" ] && [ ! -n "${OAUTH_KEY+1}" ]; then
-     echo -e "Error parsing options.  If the create_repos option is used, " 
-     echo -e "then the oauth_key must be set."
-     print_help
- fi
- if [ -n "${SYNC_REPOS+1}" ]; then
-    echo "sync repos: ${SYNC_REPOS}"
- fi
- if [ ! -n "${GITHUB_USER+1}" ]; then
-    echo -e "The github user must be specified."
-    print_help
- fi
- if [ ! -n "${MERGE_REPO+1}" ]; then
-    echo -e "The merge repo must be specified."
-    print_help
- fi
- if [ ! -n "${CONFIG_REPO+1}" ]; then
-    echo -e "The config repo must be specified."
-    print_help
- fi
-GITHUB_URL=git@github.com:${GITHUB_USER}
-CONFIG_REPO_SUFFIX=$(echo ${CONFIG_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
-MERGE_REPO_SUFFIX=$(echo ${MERGE_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
-}
 
+    if [ -n "${CREATE_REPOS+1}" ] && [ ! -n "${OAUTH_KEY+1}" ]; then
+        echo -e "Error parsing options.  If the create_repos option is used, " 
+        echo -e "then the oauth_key must be set."
+        print_help
+    fi
+
+    if [ ! -n "${GITHUB_USER+1}" ]; then
+        echo -e "The github user must be specified."
+        print_help
+    fi
+
+    if [ ! -n "${MERGE_REPO+1}" ]; then
+        echo -e "The merge repo must be specified."
+        print_help
+    fi
+
+    if [ ! -n "${CONFIG_REPO+1}" ]; then
+        echo -e "The config repo must be specified."
+        print_help
+    fi
+
+    if [ -n "${CREATE_REPOS+1}" ]; then
+        echo -n "The create repos option will distroy all github puppet "
+        echo -n "module repositories for the ${GITHUB_USER}. "
+        echo -n "Continue? Enter yes and press enter, anything else "
+        echo -n "will abort: "
+        read answer
+        if [ "${answer}" != "y" ]; then
+            exit 1
+        fi
+    fi
+
+    GITHUB_URL=git@github.com:${GITHUB_USER}
+    CONFIG_REPO_SUFFIX=$(echo ${CONFIG_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
+    MERGE_REPO_SUFFIX=$(echo ${MERGE_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
+}
 
 sync_repos() {
     echo "${BASE}/${CONFIG_REPO_SUFFIX}"
