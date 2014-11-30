@@ -82,7 +82,7 @@ parse_command_line() {
 
     if [ -n "${CREATE_REPOS+1}" ]; then
         echo -e "\nThe create repos option will distroy all github puppet "
-        echo -e "module repositories for the ${GITHUB_USER}. "
+        echo -e "module repositories for the ${GITHUB_USER} user. "
         echo -e "Continue? Enter yes and press enter, anything else "
         echo -n "will abort: "
         read answer
@@ -93,7 +93,7 @@ parse_command_line() {
 
     GITHUB_URL=git@github.com:${GITHUB_USER}
     CONFIG_REPO_SUFFIX=$(echo ${CONFIG_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
-    MERGE_REPO_SUFFIX=$(echo ${MERGE_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
+    MERGE_REPO_SUFFIX=$(echo ${MERGE_REPO_URL} | sed 's/.*\/\(.*\)\.git/\1/')
 }
 
 sync_repos() {
