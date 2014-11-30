@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash 
 
 # ############################################################################ #
 #                                                                              #
@@ -21,55 +21,70 @@
 # ############################################################################ #
 
 # Set globals
-GITHUB_USER="Triniplex"
-GITHUB_URL=git@github.com:${GITHUB_USER}
-#CONFIG_REPO="https://github.com/openstack-infra/system-config.git"
-CONFIG_REPO="https://github.com/Triniplex/system-config.git"
-CONFIG_REPO_SUFFIX=$(echo ${CONFIG_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
-MERGE_REPO="${GITHUB_URL}/puppet-modules.git"
-MERGE_REPO_SUFFIX=$(echo ${MERGE_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
 BASE="$(pwd)"
 
 declare -a sargs=()
 declare -a modules=()
 
-# Helper function for argument parsing
-read_s_args() {
-    while (($#)) && [[ $1 != -* ]]; do 
-        sargs+=("$1"); 
-        shift; 
-    done
-}
-
 print_help() {
-    echo -n "Usage: `basename $0` options (-o oauth_key) (-s) "
-    echo "sync_repos_only (-h) help"
-    exit 
+    echo -e "\nUsage: `basename $0` options (-r) create_repos "
+    echo -e "(-o oauth_key) (-u github_user) (-c config_repo_url) "
+    echo -e "(-m merge_repo_url) (-s) sync_repos_only (-h) help\n"
+    exit
 }
-
 
 # Get command line options
 parse_command_line() {
-    while (($#)); do
-        case "$1" in
-            -o) read_s_args "${@:2}"
-                if [ ${#sargs[@]} -ne 1 ]; then
-                    echo "No OAuth Key found"
-                    print_help
-                else
-                    OAUTH_KEY="${sargs[@]:0:1}"
-                fi
-                ;;
-            -s) read_s_args "${@:2}"
-                SYNC_REPOS="True"
-                ;;
-            -h) read_s_args "${@:2}"
+    while getopts "hso:u:c:m:r" OPTION; do
+        case "${OPTION}" in
+            h)
                 print_help
                 ;;
+            c)
+                CONFIG_REPO=${OPTARG}
+                ;;
+            m)
+                MERGE_REPO=${OPTARG}
+                ;;
+            r)
+                CREATE_REPOS="True"
+                ;;
+            s)
+                SYNC_REPOS="True"
+                ;;
+            o)
+                OAUTH_KEY=${OPTARG}
+                ;;
+            u)
+                GITHUB_USER=${OPTARG}
+                ;;
         esac
-        shift
     done
+ if [ -n "${CREATE_REPOS+1}" ] && [ ! -n "${OAUTH_KEY+1}" ]; then
+     echo -e "Error parsing options.  If the create_repos option is used, " 
+     echo -e "then the oauth_key must be set."
+     print_help
+ fi
+ if [ -n "${SYNC_REPOS+1}" ]; then
+    echo "sync repos: ${SYNC_REPOS}"
+ fi
+ if [ ! -n "${GITHUB_USER+1}" ]; then
+    echo -e "The github user must be specified."
+    print_help
+ fi
+ if [ ! -n "${MERGE_REPO+1}" ]; then
+    echo -e "The merge repo must be specified."
+    print_help
+ fi
+ if [ ! -n "${CONFIG_REPO+1}" ]; then
+    echo -e "The config repo must be specified."
+    print_help
+ fi
+GITHUB_URL=git@github.com:${GITHUB_USER}
+CONFIG_REPO_SUFFIX=$(echo ${CONFIG_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
+MERGE_REPO_SUFFIX=$(echo ${MERGE_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
 }
+
 
 sync_repos() {
     echo "${BASE}/${CONFIG_REPO_SUFFIX}"
