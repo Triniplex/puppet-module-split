@@ -229,6 +229,11 @@ create_repos() {
 
 # Create the github repos
 create_github_repos() {
+    if [ set -o xtrace ]; then 
+        SETXTRACE=ON
+        set +x
+    fi
+
     echo "cd ${BASE}/${MERGE_REPO_SUFFIX}"
     cd "${BASE}/${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
     create_github_repo ${MERGE_REPO_SUFFIX}
@@ -239,41 +244,58 @@ create_github_repos() {
 }
 
 create_github_repo() {
-    set +x
+
+    if [ set -o xtrace ];
+      then SETXTRACE=ON
+      set +x
+    fi
+
     DEST_REPO=$1
     RECREATE_REPO=0
+    echo "Creating repository ${DEST_REPO} ..."
     REPOS=$(curl -s -H "Authorization: token ${OAUTH_KEY}" https://api.github.com/orgs/${GITHUB_USER}/repos)
     echo $REPOS | grep "${DEST_REPO}" 2>/dev/null 1>/dev/null
+
     if [ $? -eq 0 ]; then
-        echo "Repository ${DEST_REPO} exists! Deleting ..."
         RESPONSE=""
         RESPONSE=$(curl -s -X DELETE -H "Authorization: token ${OAUTH_KEY}" \
         https://api.github.com/repos/${GITHUB_USER}/${DEST_REPO})
+
         if [ "${RESPONSE+1}" ]; then
-            echo "Repository ${DEST_REPO} has been deleted.  Recreating ..."
             RECREATE_REPO=1
         fi
+
     else
         RECREATE_REPO=1
     fi
+
     if [ ${RECREATE_REPO} -eq 1 ]; then
-        echo "Creating repository ${DEST_REPO} ..."
         RESPONSE=""
         RESPONSE=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"name\":\"${DEST_REPO}\"" \
                         -H "Authorization: token ${OAUTH_KEY}" https://api.github.com/orgs/${GITHUB_USER}/repos)
         echo $RESPONSE | grep "id" 2>/dev/null 1>/dev/null
-        if [ $? -eq 0 ]; then
-            echo "Repository ${DEST_REPO} successfully created!"
+
+        if [ $? -ne 0 ]; then
+            echo "Repository ${DEST_REPO} creation failed!"
+            exit 1
         fi
+
     fi
-    set -x
+
+    if [ -n "${SETXTRACE+1}" ]; then
+        set -x
+    fi
+
 }
 
 create_setup_repos() {
+
     cd "${BASE}"
+
     if [ ! -d "${BASE}/${CONFIG_REPO_SUFFIX}/" ]; then
         config_repo_setup
     fi
+
 }
 
 # Where it all starts
