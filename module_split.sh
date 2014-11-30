@@ -90,13 +90,16 @@ parse_command_line() {
     MERGE_REPO_SUFFIX=$(echo ${MERGE_REPO_URL} | sed 's/.*\/\(.*\)\.git/\1/')
 }
 
+execute_command() {
+    cmd=$1
+    eval echo ${cmd}
+    eval ${cmd} 2>/dev/null 1>/dev/null
+}
+
 sync_repos() {
-    echo "${BASE}/${CONFIG_REPO_SUFFIX}"
-    cd "${BASE}/${CONFIG_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
-    echo "git checkout master"
-    git checkout master 2>/dev/null 1>/dev/null
-    echo "git fetch origin"
-    git fetch origin 2>/dev/null 1>/dev/null
+    execute_command 'cd "${BASE}/${CONFIG_REPO_SUFFIX}"'
+    execute_command 'git checkout master'
+    execute_command 'git fetch origin'
     echo "Populating module list to be updated from upstream commits."
     lines=$(git log HEAD..origin/master --oneline | wc -l | awk '{print $1}')
     if [ ${lines} -eq 0 ]; then
@@ -117,82 +120,51 @@ sync_repos() {
         modules=($(printf "%s\n%s\n" "${modules[@]}" "$module" | sort -u)); 
     done
     echo "The following modules will be updated: ${modules[@]}"
-    echo "git pull origin master"
-    git pull origin master 2>/dev/null 1>/dev/null
-    echo "git subtree split --prefix=modules/ --rejoin --branch modules_branch"
-    git subtree split --prefix=modules/ --rejoin --branch modules_branch 2>/dev/null 1>/dev/null
+    execute_command 'git pull origin master'
+    execute_command 'git subtree split --prefix=modules/ --rejoin --branch modules_branch'
     # We need to update the merge repo's settings to allow pushes to the current branch
-    echo "pushd ${BASE}/${MERGE_REPO_SUFFIX}"
-    pushd "${BASE}/${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
-    echo "git config receive.denyCurrentBranch ignore"
-    git config receive.denyCurrentBranch ignore 2>/dev/null 1>/dev/null
-    echo "popd"
-    popd 2>/dev/null 1>/dev/null
-    echo "git push ${BASE}/${MERGE_REPO_SUFFIX} modules_branch:master"
-    git push "${BASE}/${MERGE_REPO_SUFFIX}" modules_branch:master
+    ecexute_command 'pushd "${BASE}/${MERGE_REPO_SUFFIX}"'
+    execute_command 'git config receive.denyCurrentBranch ignore'
+    execute_command 'popd'
+    execute_command 'git push "${BASE}/${MERGE_REPO_SUFFIX}" modules_branch:master'
     for MODULE in "${modules[@]}"; do
-        echo "cd ${BASE}"
-        cd "${BASE}" 2>/dev/null 1>/dev/null
+        execute_command 'cd "${BASE}"'
         if [ -d "${BASE}/${MODULE}-split" ]; then
-             echo "rm -rf ${BASE}/${MODULE}-split"
-             rm -rf "${BASE}/${MODULE}-split" 2>/dev/null 1>/dev/null
+             execute_command 'rm -rf "${BASE}/${MODULE}-split"'
         fi
-        echo "git clone ${MERGE_REPO_SUFFIX} ${MODULE}-split"
-        git clone "${MERGE_REPO_SUFFIX}" "${MODULE}-split" 2>/dev/null 1>/dev/null
-        echo "cd ${MODULE}-split"
-        cd "${MODULE}-split"
-        echo "git remote rm origin"
-        git remote rm origin 2>/dev/null 1>/dev/null
-        echo "git tag -l | xargs git tag -d"
-        git tag -l | xargs git tag -d 2>/dev/null 1>/dev/null
-        echo "git filter-branch --tag-name-filter cat --prune-empty --subdirectory-filter ${MODULE} -- --all"
-        git filter-branch --tag-name-filter cat --prune-empty --subdirectory-filter ${MODULE} -- --all 2>/dev/null 1>/dev/null
-        echo "git remote add origin ${GITHUB_URL}/puppet-${MODULE}.git"
-        git remote add origin ${GITHUB_URL}/puppet-${MODULE}.git 2>/dev/null 1>/dev/null
-        echo "git push -u origin master"
-        git push -u origin master 2>/dev/null 1>/dev/null
+        execute_command 'git clone "${MERGE_REPO_SUFFIX}" "${MODULE}-split"'
+        execute_command 'cd "${MODULE}-split"'
+        execute_command 'git remote rm origin'
+        execute_command 'git tag -l | xargs git tag -d'
+        execute_command 'git filter-branch --tag-name-filter cat --prune-empty --subdirectory-filter ${MODULE} -- --all'
+        execute_command 'git remote add origin ${GITHUB_URL}/puppet-${MODULE}.git'
+        execute_command 'git push -u origin master'
     done
 }
 
 merge_repo_setup() {
-    echo "cd ${BASE}"
-    cd "${BASE}" 2>/dev/null 1>/dev/null
+    execute_command 'cd "${BASE}"'
     if [ ! -d "${MERGE_REPO_SUFFIX}" ]; then
-        echo "mkdir ${MERGE_REPO_SUFFIX}"
-        mkdir "${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
-        echo "cd ${MERGE_REPO_SUFFIX}"
-        cd "${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
-        echo "git init --bare"
-        git init --bare 2>/dev/null 1>/dev/null
-        echo "cd ${BASE}/${CONFIG_REPO_SUFFIX}"
-        cd "${BASE}/${CONFIG_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
-        echo "git push ${BASE}/${MERGE_REPO_SUFFIX} modules_branch:master"
-        git push "${BASE}/${MERGE_REPO_SUFFIX}" modules_branch:master 2>/dev/null 1>/dev/null
-        echo "cd ${BASE}/${MERGE_REPO_SUFFIX}"
-        cd "${BASE}/${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
-        echo "git remote add origin ${MERGE_REPO_URL}"
-        git remote add origin "${MERGE_REPO_URL}" 2>/dev/null 1>/dev/null
-        echo "git push -u origin master"
-        git push -u origin master  2>/dev/null 1>/dev/null
-        echo "cd ${BASE}"
-        cd "${BASE}" 2>/dev/null 1>/dev/null
-        echo "rm -rf ${MERGE_REPO_SUFFIX}"
-        rm -rf "${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
-        echo "git clone ${MERGE_REPO_URL}"
-        git clone "${MERGE_REPO_URL}" 2>/dev/null 1>/dev/null
+        execute_command 'mkdir "${MERGE_REPO_SUFFIX}"'
+        execute_command 'cd "${MERGE_REPO_SUFFIX}"'
+        execute_command 'git init --bare' 
+        execute_command 'cd "${BASE}/${CONFIG_REPO_SUFFIX}"'
+        execute_command 'git push "${BASE}/${MERGE_REPO_SUFFIX}" modules_branch:master'
+        execute_command 'cd "${BASE}/${MERGE_REPO_SUFFIX}"'
+        execute_command 'git remote add origin "${MERGE_REPO_URL}"'
+        execute_command 'git push -u origin master'
+        execute_command 'cd "${BASE}"'
+        execute_command 'rm -rf "${MERGE_REPO_SUFFIX}"'
+        execute_command 'git clone "${MERGE_REPO_URL}"'
     fi
 }
 
 config_repo_setup() {
-    echo "cd ${BASE}"
-    cd "${BASE}" 2>/dev/null 1>/dev/null
+    execute_command 'cd "${BASE}"'
     if [ ! -d "${CONFIG_REPO_SUFFIX}" ]; then
-        echo "git clone ${CONFIG_REPO}"
-        git clone "${CONFIG_REPO}" 2>/dev/null 1>/dev/null
-        echo "cd ${CONFIG_REPO_SUFFIX}"
-        cd "${CONFIG_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
-        echo "git subtree split --prefix=modules/ --rejoin --branch modules_branch"
-        git subtree split --prefix=modules/ --rejoin --branch modules_branch 2>/dev/null 1>/dev/null
+        execute_command 'git clone "${CONFIG_REPO}"'
+        execute_command 'cd "${CONFIG_REPO_SUFFIX}"'
+        execute_command 'git subtree split --prefix=modules/ --rejoin --branch modules_branch'
     fi
 }
 
@@ -200,30 +172,20 @@ config_repo_setup() {
 # Create the local repositories
 create_repos() {
     merge_repo_setup
-    echo "cd ${BASE}/"
-    cd "${BASE}/"
+    execute_command 'cd "${BASE}"'
     for MODULE in $(ls "${BASE}/${CONFIG_REPO_SUFFIX}/modules"); do
         DEST_REPO="puppet-${MODULE}"
-        echo "cd ${BASE}/"
-        cd "${BASE}/"
+        execute_command 'cd "${BASE}"'
         if [ -d "${MODULE}-split" ]; then
-             echo "rm -rf ${MODULE}-split"
-             rm -rf "${MODULE}-split" 2>/dev/null 1>/dev/null
+             execute_command 'rm -rf "${MODULE}-split"'
         fi
-        echo "git clone ${MERGE_REPO_SUFFIX} ${DEST_REPO}"
-        git clone "${MERGE_REPO_SUFFIX}" "${DEST_REPO}" 2>/dev/null 1>/dev/null
-        echo "cd ${DEST_REPO}"
-        cd "${DEST_REPO}"
-        echo "git remote rm origin"
-        git remote rm origin 2>/dev/null 1>/dev/null
-        echo "git tag -l | xargs git tag -d"
-        git tag -l | xargs git tag -d 2>/dev/null 1>/dev/null
-        echo "git filter-branch --tag-name-filter cat --prune-empty --subdirectory-filter ${MODULE} -- --all"
-        git filter-branch --tag-name-filter cat --prune-empty --subdirectory-filter ${MODULE} -- --all 2>/dev/null 1>/dev/null
-        echo "git remote add origin ${GITHUB_URL}/${DEST_REPO}.git" 
-        git remote add origin "${GITHUB_URL}/${DEST_REPO}.git" 2>/dev/null 1>/dev/null
-        echo "git push -u origin master"
-        git push -u origin master 2>/dev/null 1>/dev/null
+        execute_command 'git clone "${MERGE_REPO_SUFFIX}" "${DEST_REPO}"'
+        execute_command 'cd "${DEST_REPO}"'
+        execute_command 'git remote rm origin'
+        execute_command 'git tag -l | xargs git tag -d'
+        execute_command 'git filter-branch --tag-name-filter cat --prune-empty --subdirectory-filter ${MODULE} -- --all'
+        execute_command 'git remote add origin "${GITHUB_URL}/${DEST_REPO}.git"'
+        execute_command 'git push -u origin master'
      done
 }
 
@@ -235,8 +197,7 @@ create_github_repos() {
       SETXTRACE=ON
       set +x
     fi
-    echo "cd ${BASE}/${MERGE_REPO_SUFFIX}"
-    cd "${BASE}/${MERGE_REPO_SUFFIX}" 2>/dev/null 1>/dev/null
+    execute_command 'cd "${BASE}/${MERGE_REPO_SUFFIX}"'
     create_github_repo ${MERGE_REPO_SUFFIX}
     merge_repo_setup
     for MODULE in $(ls "${BASE}/${CONFIG_REPO_SUFFIX}/modules"); do
@@ -276,7 +237,6 @@ create_github_repo() {
 }
 
 create_setup_repos() {
-    cd "${BASE}"
     if [ ! -d "${BASE}/${CONFIG_REPO_SUFFIX}/" ]; then
         config_repo_setup
     fi
