@@ -22,8 +22,6 @@
 
 # Set globals
 BASE="$(pwd)"
-
-declare -a sargs=()
 declare -a modules=()
 
 print_help() {
@@ -44,7 +42,7 @@ parse_command_line() {
                 CONFIG_REPO=${OPTARG}
                 ;;
             m)
-                MERGE_REPO=${OPTARG}
+                MERGE_REPO_URL=${OPTARG}
                 ;;
             r)
                 CREATE_REPOS="True"
@@ -60,31 +58,43 @@ parse_command_line() {
                 ;;
         esac
     done
- if [ -n "${CREATE_REPOS+1}" ] && [ ! -n "${OAUTH_KEY+1}" ]; then
-     echo -e "Error parsing options.  If the create_repos option is used, " 
-     echo -e "then the oauth_key must be set."
-     print_help
- fi
- if [ -n "${SYNC_REPOS+1}" ]; then
-    echo "sync repos: ${SYNC_REPOS}"
- fi
- if [ ! -n "${GITHUB_USER+1}" ]; then
-    echo -e "The github user must be specified."
-    print_help
- fi
- if [ ! -n "${MERGE_REPO+1}" ]; then
-    echo -e "The merge repo must be specified."
-    print_help
- fi
- if [ ! -n "${CONFIG_REPO+1}" ]; then
-    echo -e "The config repo must be specified."
-    print_help
- fi
-GITHUB_URL=git@github.com:${GITHUB_USER}
-CONFIG_REPO_SUFFIX=$(echo ${CONFIG_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
-MERGE_REPO_SUFFIX=$(echo ${MERGE_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
-}
 
+    if [ -n "${CREATE_REPOS+1}" ] && [ ! -n "${OAUTH_KEY+1}" ]; then
+        echo -e "Error parsing options.  If the create_repos option is used, " 
+        echo -e "then the oauth_key must be set."
+        print_help
+    fi
+
+    if [ ! -n "${GITHUB_USER+1}" ]; then
+        echo -e "The github user must be specified."
+        print_help
+    fi
+
+    if [ ! -n "${MERGE_REPO_URL+1}" ]; then
+        echo -e "The merge repo must be specified."
+        print_help
+    fi
+
+    if [ ! -n "${CONFIG_REPO+1}" ]; then
+        echo -e "The config repo must be specified."
+        print_help
+    fi
+
+    if [ -n "${CREATE_REPOS+1}" ]; then
+        echo -e "\nThe create repos option will distroy all github puppet "
+        echo -e "module repositories for the ${GITHUB_USER}. "
+        echo -e "Continue? Enter yes and press enter, anything else "
+        echo -n "will abort: "
+        read answer
+        if [ "${answer}" != "yes" ]; then
+            exit 1
+        fi
+    fi
+
+    GITHUB_URL=git@github.com:${GITHUB_USER}
+    CONFIG_REPO_SUFFIX=$(echo ${CONFIG_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
+    MERGE_REPO_SUFFIX=$(echo ${MERGE_REPO} | sed 's/.*\/\(.*\)\.git/\1/')
+}
 
 sync_repos() {
     echo "${BASE}/${CONFIG_REPO_SUFFIX}"
@@ -145,12 +155,12 @@ merge_repo_setup() {
         cd "${BASE}/${CONFIG_REPO_SUFFIX}"
         git push "${BASE}/${MERGE_REPO_SUFFIX}" modules_branch:master
         cd "${BASE}/${MERGE_REPO_SUFFIX}"
-        git remote add origin git@github.com:Triniplex/puppet-modules.git 2>/dev/null 1>/dev/null
+        git remote add origin "${MERGE_REPO_URL}" 2>/dev/null 1>/dev/null
         echo "git push -u origin master"
         git push -u origin master  2>/dev/null 1>/dev/null
         cd "${BASE}"
         rm -rf "${MERGE_REPO_SUFFIX}"
-        git clone github.com:Triniplex/puppet-modules.git
+        git clone "${MERGE_REPO_URL}"
     fi
 }
 
