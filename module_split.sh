@@ -82,7 +82,7 @@ parse_command_line() {
 
     if [ -n "${CREATE_REPOS+1}" ]; then
         echo -e "\nThe create repos option will distroy all github puppet "
-        echo -e "module repositories for the ${GITHUB_USER}. "
+        echo -e "module repositories for the ${GITHUB_USER} user. "
         echo -e "Continue? Enter yes and press enter, anything else "
         echo -n "will abort: "
         read answer
