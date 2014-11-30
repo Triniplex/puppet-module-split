@@ -211,7 +211,7 @@ create_repos() {
              rm -rf "${MODULE}-split" 2>/dev/null 1>/dev/null
         fi
         echo "git clone ${MERGE_REPO_SUFFIX} ${DEST_REPO}"
-        git clone "${MERGE_REPO_SUFFIX}" "${DEST_REPO}"
+        git clone "${MERGE_REPO_SUFFIX}" "${DEST_REPO}" 2>/dev/null 1>/dev/null
         echo "cd ${DEST_REPO}"
         cd "${DEST_REPO}"
         echo "git remote rm origin"
