@@ -18,6 +18,41 @@
 #    License for the specific language governing permissions and limitations   #
 #    under the License.                                                        #
 #                                                                              #
+#    Description: This is a script to be used in preparation for splitting     #
+#    the git repository github.com:openstack-infra/system-config.git into      #
+#    individual github projects, based on the list of puppet modules in        #
+#    the repository.                                                           #
+#                                                                              #
+#     Usage:                                                                   #
+#     -o oauth_key - This is an OAuth access token called a "personal access   #
+#                    "token" on github.  This must be used to create the       #
+#                    repositories necessary for the split.                     #
+#     -r - use this flag to create the repositories on github.  Using this     #
+#          option will delete any existing repositories named puppet-module    #
+#          where module is an enumeration of the directories in the repo.      #
+#      -u github_user - This is the github user the repositories will be       #
+#         managed with.                                                        #
+#      -c config_repo_url - this is the url of the configuration repository    #
+#         from which the modules are to be split from.                         #
+#      -m merge_repo_url - this is a meta repository created in github which   #
+#         is used to manage the state of the modules and construct the         #
+#         history for the individual repositories created by the script.       #
+#      -s sync_repos_only - use this option to keep the repositories in        #
+#         sync with the config repository.                                     #
+#                                                                              #
+#      Instructions                                                            #
+#      1. Place the script in it's own directory, i.e. /opt/modules/           #
+#      2. To create the initial repositories (substitute your own user, OAuth  #
+#         key, and merge repo url here):                                       #
+#         /opt/modules/module_split -r -o oauth_key  -u Triniplex \            #
+#         -c  github.com:openstack-infra/system-config.git                     #
+#         -m git@github.com:Triniplex/puppet-modules.git                       #
+#      3. To synchronize repositories:                                         #
+#         /opt/modules/module_split -u Triniplex \                             #
+#         -c github.com:openstack-infra/system-config.git \                    #
+#         -m git@github.com:Triniplex/puppet-modules.git                       #
+#      4. Run it from cron                                                     #
+#                                                                              #
 # ############################################################################ #
 
 # Set globals
