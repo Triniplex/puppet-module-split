@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash -x
 
 # ############################################################################ #
 #                                                                              #
@@ -56,7 +56,8 @@
 # ############################################################################ #
 
 # Set globals
-BASE="$(pwd)"
+BASE="/opt/modules/"
+#BASE="$(pwd)"
 declare -a modules=()
 
 print_help() {
@@ -64,6 +65,15 @@ print_help() {
     echo -e "(-o oauth_key) (-u github_user) (-c config_repo_url) "
     echo -e "(-m merge_repo_url) (-s) sync_repos_only (-h) help\n"
     exit
+}
+
+exit_script() {
+    echo "Ending: $(date -u)"
+    exit 0
+}
+
+enter_script() {
+    echo -e "\nstarting: $(date -u)"
 }
 
 # Get command line options
@@ -134,23 +144,23 @@ execute_command() {
 sync_repos() {
     execute_command 'cd "${BASE}/${CONFIG_REPO_SUFFIX}"'
     execute_command 'git checkout master'
-    execute_command 'git fetch github'
+    execute_command 'git fetch origin'
     echo "Populating module list to be updated from upstream commits."
-    lines=$(git log HEAD..github/master --oneline | wc -l | awk '{print $1}')
+    lines=$(git log HEAD..origin/master --oneline | wc -l | awk '{print $1}')
     if [ ${lines} -eq 0 ]; then
         echo "No changes have been made to the config repository."
         exit 0
     fi
     # Search the commits for changes which apply to the puppet modules
-    commit_hash=$(git log HEAD..github/master --oneline | awk '{print $1}')
+    commit_hash=$(git log HEAD..origin/master --oneline | awk '{print $1}')
     if [ $(git diff --name-status ${commit_hash} | grep modules 2>/dev/null \
     1>/dev/null && echo $?) -ne 0 ]; then
        # None of the commits made to the config repo apply to us
        exit 0
     fi
-    for module in $(for commit in $(git log HEAD..github/master -$lines \
+    for module in $(for commit in $(git log HEAD..origin/master -$lines \
     --oneline | awk '{print $1}'); do git diff-tree --no-commit-id \
-    --name-only -r $commit | sed -e 's/[a-z]*\/\([a-z]*\).*/\1/'; \
+    --name-only -r $commit | sed -e 's/[a-z]*\/\([a-z_]*\).*/\1/'; \
     done); do 
         modules=($(printf "%s\n%s\n" "${modules[@]}" "$module" | sort -u)); 
     done
@@ -279,6 +289,7 @@ create_setup_repos() {
 
 # Where it all starts
 main() {
+    enter_script
     if [ -n "${OAUTH_KEY+1}" ]; then
         create_setup_repos
         create_github_repos 
@@ -288,6 +299,7 @@ main() {
     else
         create_repos
     fi
+    exit_script
 }
 
 # Execute the functions
