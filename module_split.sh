@@ -134,21 +134,21 @@ execute_command() {
 sync_repos() {
     execute_command 'cd "${BASE}/${CONFIG_REPO_SUFFIX}"'
     execute_command 'git checkout master'
-    execute_command 'git fetch origin'
+    execute_command 'git fetch github'
     echo "Populating module list to be updated from upstream commits."
-    lines=$(git log HEAD..origin/master --oneline | wc -l | awk '{print $1}')
+    lines=$(git log HEAD..github/master --oneline | wc -l | awk '{print $1}')
     if [ ${lines} -eq 0 ]; then
         echo "No changes have been made to the config repository."
         exit 0
     fi
     # Search the commits for changes which apply to the puppet modules
-    commit_hash=$(git log HEAD..origin/master --oneline | awk '{print $1}')
+    commit_hash=$(git log HEAD..github/master --oneline | awk '{print $1}')
     if [ $(git diff --name-status ${commit_hash} | grep modules 2>/dev/null \
     1>/dev/null && echo $?) -ne 0 ]; then
        # None of the commits made to the config repo apply to us
        exit 0
     fi
-    for module in $(for commit in $(git log HEAD..origin/master -$lines \
+    for module in $(for commit in $(git log HEAD..github/master -$lines \
     --oneline | awk '{print $1}'); do git diff-tree --no-commit-id \
     --name-only -r $commit | sed -e 's/[a-z]*\/\([a-z]*\).*/\1/'; \
     done); do 
@@ -158,7 +158,7 @@ sync_repos() {
     execute_command 'git pull origin master'
     execute_command 'git subtree split --prefix=modules/ --rejoin --branch modules_branch'
     # We need to update the merge repo's settings to allow pushes to the current branch
-    ecexute_command 'pushd "${BASE}/${MERGE_REPO_SUFFIX}"'
+    execute_command 'pushd "${BASE}/${MERGE_REPO_SUFFIX}"'
     execute_command 'git config receive.denyCurrentBranch ignore'
     execute_command 'popd'
     execute_command 'git push "${BASE}/${MERGE_REPO_SUFFIX}" modules_branch:master'
